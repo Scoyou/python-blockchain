@@ -13,8 +13,8 @@ class Blockchain(object):
         self.new_block(previous_hash=1, proof=100)
 
     def new_block(self,proof,previous_hash=None):
-        """Creates a new block in the Blockchain
-
+        """
+        Creates a new block in the Blockchain
         :param proof: <int> the proof given by the proof of work algorithm
         :param previous_hash: <str> hash of previous Block
         :return: <dict> new block
@@ -33,8 +33,8 @@ class Blockchain(object):
         return block
 
     def new_transaction(self,sender,recipient,amount):
-        """Creates a new transaction that will go into the next mined into the block
-
+        """
+        Creates a new transaction that will go into the next mined into the block
         :param sender: <str> address of the sender
         :param recipient: <str> address of the recipient
         :param amount: <int> amount
@@ -50,8 +50,8 @@ class Blockchain(object):
         return self.last_block['index'] + 1
 
     def proof_of_work(self, last_proof):
-        """Simple Proof of Work algorithm
-
+        """
+        Simple Proof of Work algorithm
         -Find a number p such that hash(pp') contains four leading 0's, where p is the previous p'
         -p is the previous proof, and p' is the new proof
         """
@@ -63,7 +63,8 @@ class Blockchain(object):
         return proof
 
     def valid_chain(self,chain):
-        """Determines if a block is valid
+        """
+        Determines if a block is valid
 
         :param chain: <list> a blockchain
         :return: <bool> True if valid, False if not
@@ -81,10 +82,43 @@ class Blockchain(object):
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
+            last_block = block
+            current_index += 1
+
+        return True
+
+    def resolve_conflicts(self):
+        """
+        This is our Consensus Algorithm, it resolves conflicts
+        by replacing our chain with the longest one in the network.
+        :return: <bool> True if our chain was replaced, False if not
+        """
+        neighbors = self.nodes
+        new_chain = None
+
+        max_length = len(self.chain)
+
+        for node in neighbors:
+            response = requests.get(f'http://{node}/chain')
+
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain
+
+        if new_chain:
+            self.chain = new_chain
+            return True
+
+        return False
+
     @staticmethod
     def valid_proof(last_proof, proof):
-        """Validates the proof. Does hash(last_proof, proof) contain 4 leading zeroes?
-
+        """
+        Validates the proof. Does hash(last_proof, proof) contain 4 leading zeroes?
         :param last_proof: <int> Previous proof
         :param proof: <int> current proof
         :return bool:  True if correct, False if not
@@ -95,8 +129,8 @@ class Blockchain(object):
         return guess_hash[:4] == "0000"
     @staticmethod
     def hash(block):
-        """Creates a sha-256 hash of a Block
-
+        """
+        Creates a sha-256 hash of a Block
         :param block: <dick> Block
         :return: <str>
         """
