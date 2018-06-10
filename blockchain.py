@@ -10,7 +10,6 @@ class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.current_transactions = []
-
         self.new_block(previous_hash=1, proof=100)
 
     def new_block(self,proof,previous_hash=None):
@@ -28,12 +27,10 @@ class Blockchain(object):
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
         }
-
         self.current_transactions = [] #reset list of transactions
 
         self.chain.append(block)
         return block
-
 
     def new_transaction(self,sender,recipient,amount):
         """Creates a new transaction that will go into the next mined into the block
@@ -65,6 +62,25 @@ class Blockchain(object):
 
         return proof
 
+    def valid_chain(self,chain):
+        """Determines if a block is valid
+
+        :param chain: <list> a blockchain
+        :return: <bool> True if valid, False if not
+        """
+
+        last_block = chain[0]
+        current_index = 1
+
+        while current_index < len(chain):
+            block = chain[current_index]
+            print(f'{last_block}')
+            print(f'{block}')
+            print('\n-------\n')
+
+            if block['previous_hash'] != self.hash(last_block):
+                return False
+
     @staticmethod
     def valid_proof(last_proof, proof):
         """Validates the proof. Does hash(last_proof, proof) contain 4 leading zeroes?
@@ -77,7 +93,6 @@ class Blockchain(object):
         guess = f'{last_proof}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
-
     @staticmethod
     def hash(block):
         """Creates a sha-256 hash of a Block
@@ -88,12 +103,9 @@ class Blockchain(object):
 
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
-
-
     @property
     def last_block(self):
         return self.chain[-1]
-
 
 #instantiate the node
 app = Flask(__name__)
