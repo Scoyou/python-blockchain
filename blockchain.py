@@ -195,6 +195,24 @@ def full_chain():
     }
 
     return jsonify(response), 200
+@app.node('/nodes/register', methods=['POST'])
+def register_nodes():
+    values = request.get_json()
+    nodes = values.get(nodes)
+    if nodes is None:
+        return "ERROR: Please supply a valid list of nodes", 400
+
+    for node in nodes:
+        blockchain.register_node(node)
+
+    response = {
+        'message': "New nodes have been added",
+        'total_nodes': list(blockchain.nodes)
+    }
+    return jsonify(response), 201
+
+@app.route('/nodes/resolve', methods=['GET'])
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5000)
