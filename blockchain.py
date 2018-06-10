@@ -13,7 +13,7 @@ class Blockchain(object):
 
         self.new_block(previous_hash=1, proof=100)
 
-    def new_block(self):
+    def new_block(self,proof,previous_hash=None):
         """Creates a new block in the Blockchain
 
         :param proof: <int> the proof given by the proof of work algorithm
@@ -104,19 +104,41 @@ blockchain = Blockchain()
 
 @app.route('/mine', methods=['GET'])
 def mine():
-    return "We'll mine a new block"
+    last_block = blockchain.last_block
+    last_proof = last_block['proof']
+    proof = blockchain.proof_of_work(last_proof)
+
+    blockchain.new_transaction(
+        sender=0,
+        recipient=node_identifier,
+        amount=1
+    )
+
+    previous_hash=blockchain.hash(last_block)
+    block = blockchain.new_block(proof, previous_hash)
+
+    response = {
+        'message': "New Block Forged",
+        'index': block['index'],
+        'transactions': block['transactions'],
+        'proof': block['proof'],
+        'previous_hash': block['previous_hash'],
+    }
+    return jsonify(response), 200
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
     values = request.get_json()
 
-    required= ['sender', 'recipient', 'amount']
+    # Check that the required fields are in the POST'ed data
+    required = ['sender', 'recipient', 'amount']
     if not all(k in values for k in required):
-        return 'missing values', 400
+        return 'Missing values', 400
 
-    index = blockchain.new_transaction(values['sender'],values['recipient'],values['amount'])
+    # Create a new Transaction
+    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
-    response = {'message': f'Transaction will be added to the block {index}'}
+    response = {'message': f'Transaction will be added to Block {index}'}
     return jsonify(response), 201
 
 @app.route('/chain', methods=['GET'])
